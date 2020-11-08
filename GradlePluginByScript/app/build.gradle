@@ -1,0 +1,149 @@
+import com.android.build.gradle.AppExtension
+import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.api.BaseVariantOutput
+import com.android.builder.model.SigningConfig
+
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-android-extensions'
+
+apply plugin: JiaGuPlugin
+
+jiagu {
+    username '360加固账号'
+    password '360加固密码'
+    jiaGuToolsPath 'D:\\jiagu\\start-package\\360jiagubao_windows_64\\jiagu\\jiagu.jar'
+}
+
+android {
+
+    signingConfigs {
+        release {
+            storeFile file('gradle_plugin.jks')
+            storePassword '123456'
+            keyAlias 'GradlePlugin'
+            keyPassword '123456'
+        }
+    }
+
+    compileSdkVersion 30
+    buildToolsVersion "30.0.0"
+    defaultConfig {
+        applicationId "com.study.gradlepluginbyscript"
+        minSdkVersion 19
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.core:core-ktx:1.3.2'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.3'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+}
+
+class JiaGu {
+    String username
+    String password
+    String jiaGuToolsPath
+
+    String getUsername() {
+        return username
+    }
+
+    void setUsername(String username) {
+        this.username = username
+    }
+
+    String getPassword() {
+        return password
+    }
+
+    void setPassword(String password) {
+        this.password = password
+    }
+
+    String getJiaGuToolsPath() {
+        return jiaGuToolsPath
+    }
+
+    void setJiaGuToolsPath(String jiaGuToolsPath) {
+        this.jiaGuToolsPath = jiaGuToolsPath
+    }
+}
+
+class JiaGuPlugin implements Plugin<Project> {
+
+    @Override
+    void apply(Project project) {
+        JiaGu jiagu = project.extensions.create("jiagu", JiaGu)
+        //回调，在gradle配置完成之后回调，在解析完build.gradle之后回调
+        project.afterEvaluate {
+            AppExtension android = project.extensions.android
+            android.applicationVariants.all {
+                ApplicationVariant variant ->
+                    SigningConfig signingConfig = variant.signingConfig
+                    variant.outputs.all {
+                        BaseVariantOutput output ->
+                            //输出的apk文件
+                            File apk = output.outputFile
+                            //创建加固任务
+                            JiaGuTask jiaGuTask = project.tasks.create("jiagu${variant.baseName.capitalize()}", JiaGuTask)
+                            jiaGuTask.jiaGu = jiagu
+                            jiaGuTask.signingConfig = signingConfig
+                            jiaGuTask.apk = apk
+                    }
+            }
+        }
+    }
+}
+
+class JiaGuTask extends DefaultTask {
+
+    JiaGu jiaGu
+    SigningConfig signingConfig
+    File apk
+
+    JiaGuTask() {
+        //用于在侧边栏归集任务
+        group = "jiagu"
+    }
+
+    @TaskAction
+    def run() {
+        //调用命令行工具
+        project.exec {
+            // java -jar jiagu.jar -login user password
+            it.commandLine("java", "-jar", jiaGu.jiaGuToolsPath, "-login", jiaGu.username, jiaGu.password)
+        }
+        //非空即为true
+        if (signingConfig) {
+            project.exec {
+                // java -jar jiagu.jar -importsign  xxxx
+                it.commandLine("java", "-jar", jiaGu.jiaGuToolsPath, "-importsign", signingConfig.storeFile.absolutePath,
+                        signingConfig.storePassword, signingConfig.keyAlias, signingConfig.keyPassword)
+            }
+        }
+        project.exec {
+            // java -jar jiagu.jar -jiagu  xxxx
+            it.commandLine("java", "-jar", jiaGu.jiaGuToolsPath, "-jiagu", apk.absolutePath,
+                    apk.parent, "-autosign")
+        }
+    }
+}

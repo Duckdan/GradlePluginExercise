@@ -1,0 +1,3 @@
+include ':app', ':jiagu_plugin'
+rootProject.name = 'AndroidGradleStudyDemo'
+

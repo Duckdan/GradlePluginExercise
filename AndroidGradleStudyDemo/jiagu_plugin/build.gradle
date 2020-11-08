@@ -1,0 +1,27 @@
+//转化未groovy插件
+apply plugin: 'groovy'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    //build.gradle中所要用到的插件，开发在build.gradle中使用的插件时必须添加上这个工具
+    implementation 'com.android.tools.build:gradle:3.5.3'
+    //方便调用GradleApi
+    implementation gradleApi()
+}
+
+sourceCompatibility = "7"
+targetCompatibility = "7"
+
+//发布插件到本地仓库
+apply plugin: 'maven-publish'
+publishing {
+    publications {
+        Jiagu(MavenPublication) {
+            //要把源码生成的jar包上传
+            from components.java
+            groupId 'com.study'
+            artifactId 'jiagu'
+            version "1.0"
+        }
+    }
+}

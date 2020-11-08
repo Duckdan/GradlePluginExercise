@@ -1,0 +1,52 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+//“com.study.jiagu”与jiagu_plugin/src/main/resources/META-INF/gradle-plugins/下面文件的名称
+apply plugin:'com.study.jiagu'
+
+jiagu{
+    username '360加固账号'
+    password '360加固密码'
+    jiaguTools 'D:\\jiagu\\start-package\\360jiagubao_windows_64\\jiagu\\jiagu.jar'
+}
+
+android {
+    signingConfigs {
+        release {
+            storeFile file('gradle_plugin.jks')
+            storePassword '123456'
+            keyPassword '123456'
+            keyAlias = 'GradlePlugin'
+        }
+    }
+    compileSdkVersion 30
+    buildToolsVersion "30.0.0"
+
+
+    defaultConfig {
+        applicationId "com.study.androidgradlestudydemo"
+        minSdkVersion 19
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.core:core-ktx:1.0.2'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+}
